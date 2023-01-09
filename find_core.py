@@ -1,32 +1,13 @@
 #!/usr/bin/env python3
 
-#import subprocess
+import subprocess
 import sys
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 import os 
 
 def findCore(file, n=0, i=0):
-    
-    # read in the original rein file 
-    fr = open(file, "r")
-    line = fr.readline()
-    count = 0
-    experiment = ""
-    
-    #find the name of the experiment that we are up to removing
-    while line: 
-
-        if line[:1] == "$" and n == count:
-            end = line.index(':')
-            experiment = line[1:end]
-            break
-        if "}" in line: count += 1
-        line = fr.readline()
-
-    print (f'Removing Experiment {experiment} :')
-    fr.close()
-    
+        
     #create the new temp file that will be the same as the original minus one experiment 
     outputFile = f"/mnt/tacas/Examples/temp/newfile{i}.rein"
     fr = open(file, "r")
@@ -34,19 +15,16 @@ def findCore(file, n=0, i=0):
 
     line = fr.readline()
     count = 0
-    removeExperiment = False
     
     #read in the original file and only write out the lines that are not 
-    #associated with the experiment we are removing
+    #part of the experiment we are removing
     while line:
+        
+        #TEST THIS LINE
+        if not "#Experiment" in line or n != count: fw.write(line)
+        #else: print(f"Removing {line}")
 
-        if line[:1] == "$" and n == count: removeExperiment = True
-            
-        if not removeExperiment and not f'${experiment}' in line: fw.write(line)
-
-        if "}" in line: 
-            removeExperiment = False 
-            count += 1
+        if "#Experiment" in line: count += 1
 
         line = fr.readline()
 
@@ -56,25 +34,22 @@ def findCore(file, n=0, i=0):
     #base case, once we've checked all the experiments from the original file
     if n >= count: 
         
-        #any experiments left in the file at this point are part of the nconsistancy core
+        #any experiments left in the file at this point are part of the inconsistancy core
         #go through the current file and put any experiments that are left into a list
         f = open(file, "r")
         line = f.readline()
         core = []
         while line: 
-            if line[:1] == "$": 
-                end = line.index(':')
-                core += [line[1:4]]
+            if line[:1] == "#" or line[:2] == "(#": 
+                core += [line]
             line = f.readline()
             
         #for num in range(i-1):
         #   os.remove(f'newfile{num}.rein')
+
         #return the inconsistancy core
         return core
 
-    #p = subprocess.Popen("dotnet fsi rein.fsx" , stdout=subprocess.PIPE, shell=True)
-    #result = p.communicate()
-    #print(result)
     
     #tell rein which temp file we are up to 
     f = open("curFile.txt", 'w')
@@ -104,10 +79,10 @@ def findCore(file, n=0, i=0):
         f = open(file, "r")
         line = f.readline()
         while line: 
-            if line[:1] == "$": 
-                end = line.index(':')
-                return line[1:end]
+            if line[:1] == "#" or line[:2] == "(#": 
+                return line
             line = f.readline()
+
     #if removing this experiment did not yield results, its not part of the core
     #continue the recursion with the new tmep file, removing experiments from the same position
     return findCore(outputFile, n, i+1)
@@ -116,8 +91,13 @@ def findCore(file, n=0, i=0):
 def main():
     file = sys.argv[1]
     print(f"Inconsistancy Core: {findCore(file)}")
+
+    #clear curFile so its ready for next use
     f = open("curFile.txt", 'w')
     f.write("")
     f.close()
 
 main()
+
+
+#if core returns onlt one experiemnt, then the probelm is with the interactions not the experiments 
