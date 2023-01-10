@@ -11,9 +11,12 @@ import os
 def findCore(file, option, eNames, n=0, i=0):
         
     #create the new temp file that will be the same as the original minus one experiment 
-    outputFile = f"/mnt/tacas/Examples/temp/newfile{i}.rein"
+    outputFile = f"../temp/newfile{i}.rein"
+    #create the new file that keep track of removed experiments in case there are multiple cores
+    saveFile = "../temp/savefile.rein"
     fr = open(file, "r")
     fw = open(outputFile, "w")
+    fs = open(saveFile, "a")
     line = fr.readline()
     
     if option == 1: 
@@ -23,8 +26,11 @@ def findCore(file, option, eNames, n=0, i=0):
             #ignore lines that are commented out 
             if line[:2] != "//":
                 
-                #only write out the line if it doesn't contain the experiment we are up to removing
-                if (n < len(eNames) and not eNames[n] in line) or n >= len(eNames): fw.write(line)
+                #only write out the line to newfile if it doesn't contain the experiment we are up to removing
+                if not eNames[n] in line: fw.write(line)
+
+                #write all other lines to savefile 
+                else: fs.write(line)
 
             line = fr.readline()
 
@@ -38,15 +44,27 @@ def findCore(file, option, eNames, n=0, i=0):
             #ignore lines that are commented out 
             if line[:2] != "//":
 
-                if not "#Experiment" in line or n != count: fw.write(line)
-                #else: print(f"Removing {line}")
+                #if the current line doesn't contain an experiment, write it to both files
+                if not "#Experiment" in line: 
+                    fw.write(line)
+                    fs.write(line)
+                
+                else:
 
-                if "#Experiment" in line: count += 1
+                    count += 1
+
+                    #if this experiment is not the one we're removing, write it to newfile
+                    if n != count: fw.write(line)
+
+                    #if it is the one we're removing, write it to savefile
+                    else: fs.write(line)
+
 
             line = fr.readline()
 
     fr.close()
     fw.close()
+    fs.close()
 
 
     #base case depends on option so figure out if it has been triggered
@@ -56,8 +74,8 @@ def findCore(file, option, eNames, n=0, i=0):
 
     #base case, once we've checked all the experiments from the original file
     if basecase: 
-        
-        #any experiments left in the file at this point are part of the inconsistancy core
+
+        #any experiments left in file at this point are part of the inconsistancy core
         #go through the current file and put any experiments that are left into a list
         f = open(file, "r")
         line = f.readline()
@@ -66,16 +84,42 @@ def findCore(file, option, eNames, n=0, i=0):
             if line[:1] == "#" or line[:2] == "(#": 
                 core += [line]
             line = f.readline()
-            
+
+        #before we return the inconsistancy core, we want to make sure savefile 
+        #doesn't contain another one new one so run the latest version of it 
+        #through rein 
+
+        #tell rein which file to run
+        f = open("../temp/curFile.txt", 'w')
+        f.write(saveFile)
+        f.close()
+
+        #run the rein jupyter notebook on the savefile 
+        with open('REINnotebook.ipynb') as ff:
+            nb_in = nbformat.read(ff, nbformat.NO_CONVERT)
+
+        ep = ExecutePreprocessor(timeout=1200, kernel_name='ifsharp')
+
+        nb_out = ep.preprocess(nb_in)
+
+        #catch the result
+        result = nb_out[0]['cells'][0]['outputs'][1]['data']['text/plain']
+
+        #don't know why this clean up doesn't work 
         #for num in range(i-1):
         #   os.remove(f'newfile{num}.rein')
 
-        #return the inconsistancy core
-        return core
+        #if savefile has no core, return the just this core
+        if result == '"Solution(s) found"': return core
 
+        #otherwise we need to find the core in savefile
+        other_core = findCore(saveFile, option, eNames)
+        return [core, other_core]
+
+    #end of basecase
     
     #tell rein which temp file we are up to 
-    f = open("curFile.txt", 'w')
+    f = open("../temp/curFile.txt", 'w')
     f.write(outputFile)
     f.close()
     
@@ -131,6 +175,7 @@ def findExperimentNames(file) -> set():
 
 
 def main():
+
     file = sys.argv[1]
     if len(sys.argv) > 2: option = sys.argv[2]
     else: option = 1
@@ -139,14 +184,13 @@ def main():
     if option == 1: names = list(findExperimentNames(file))
     print(f"Inconsistancy Core: {findCore(file, option, names)}")
 
-    #clear curFile so its ready for next use
-    f = open("curFile.txt", 'w')
+    #clear curFile and saveFile for next use
+    f = open("../temp/curFile.txt", 'w')
+    f.write("")
+    f.close()
+    f = open("../temp/savefile.rein", 'w')
     f.write("")
     f.close()
 
 main()
-
-#if core returns onlt one experiemnt, then the probelm is with the interactions not the experiments 
-
-
 

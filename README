@@ -15,11 +15,13 @@ is removed, but if it part of the core, it stays in the file. Once the program h
 through each experiemnt, it returns the subset that make up the inconsistancy core. 
 
 First Written: 08/02/2022
-Last Updated: 11/20/2022
+Last Updated: 01/10/2023
 Author: Judith Wechter
 
 ---------------- 
     Versions
 ---------------- 
+
+Version 4: this version saves removed experiments into a separate file and makes sure that those experiments don't contian another inconsistancy core. If there is more that one core, program returns both. Also cleaned up some formatting
 
 Version 3: this version ignores lines that are commented out (i.e. begin with //) and includes an option to remove entire experiments at a time (not just lines)
