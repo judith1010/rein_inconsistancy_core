@@ -3,7 +3,8 @@
 ---------------- 
 
 This project was developed starting in summer 2022 as part of the REIN gene networks project. 
-Advised by Prof Hillel Kugler and PHD candidate Eitan Tannenbaum as part of the BIU-YU Summer Research program. 
+Advised by Prof Hillel Kugler and PHD candidate Eitan Tannenbaum as part of the BIU-YU Summer 
+Research program. 
 
 The goal of this project is to indetify inconsistancy cores in .rein files that cause REIN to 
 return "No Solutions". This allows users to have a better understanding of why the input data 
@@ -22,6 +23,9 @@ Author: Judith Wechter
     Versions
 ---------------- 
 
-Version 4: this version saves removed experiments into a separate file and makes sure that those experiments don't contian another inconsistancy core. If there is more that one core, program returns both. Also cleaned up some formatting
+Version 4: this version saves removed experiments into a separate file and makes sure that those 
+experiments don't contian another inconsistancy core. If there is more that one core, program 
+returns both. Also cleaned up some formatting
 
-Version 3: this version ignores lines that are commented out (i.e. begin with //) and includes an option to remove entire experiments at a time (not just lines)
+Version 3: this version ignores lines that are commented out (i.e. begin with //) and includes an 
+option to remove entire experiments at a time (not just lines)
